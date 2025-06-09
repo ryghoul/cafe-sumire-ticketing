@@ -1,0 +1,25 @@
+/* ── COLOR PALETTE ───────────────────────────────────────────────────────── */
+:root {
+  --sumire-purple: #8C6FA7;
+  --blush-beige: #D1B7A1;
+  --sumi-black: #1C1C1C;
+  --matcha-green: #8B9B75;
+  --rice-paper: #F5F3EF;
+  --charcoal-text: #3D3D3D;
+  --accent-gold: #C2B280;
+}
+
+/*-------- MOBILE COMPATABILITY -------*/
+/* mobile (default) */
+.order-card { padding: 0.5rem; font-size: 1rem; }
+
+/* tablets and up */
+@media (min-width: 600px) {
+  .order-card { padding: 1rem; font-size: 1.125rem; }
+}
+
+/* desktops */
+@media (min-width: 1024px) {
+  .order-card { padding: 1.5rem; font-size: 1.25rem; }
+}
+

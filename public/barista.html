@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- responsive scaling -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Barista • Café Sumire</title>
+
+  <!-- Tailwind for layout/utilities only -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- your custom styles -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="barista.css">
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- sticky header (no bg-color class here) -->
+    <h1 class="text-2xl font-semibold text-center">Pending Orders</h1>
+
+    <button onclick="location.href='cashier.html'" class="secondary mx-auto mb-4 w-fit block">
+  💵 Go to Cashier View
+</button>
+
+
+  <!-- toolbar stacks on mobile, lines up on sm+ -->
+  <div class="toolbar flex flex-col sm:flex-row justify-center items-center sm:space-x-4 p-4">
+    <button id="clearAll"
+            class="clear-all px-4 py-2 rounded w-full sm:w-auto hover:bg-gray-100">
+      🗑️ Clear All Orders
+    </button>
+    <button id="saveSummary"
+            class="save-summary px-4 py-2 rounded w-full sm:w-auto mt-2 sm:mt-0 hover:bg-gray-100">
+      💾 Save Summary
+    </button>
+  </div>
+
+  <!-- orders list -->
+  <main class="flex-1 overflow-auto p-4">
+    <ul id="orders" class="space-y-3 max-w-md mx-auto">
+      <!-- JS injects <li class="order-card">…</li> here -->
+    </ul>
+  </main>
+
+  <!-- summary box -->
+  <div id="summaryBox" class="summary-box hidden p-4 max-w-md mx-auto"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="barista.js" defer></script>
+</body>
+</html>
