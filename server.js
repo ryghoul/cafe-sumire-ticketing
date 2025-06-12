@@ -34,6 +34,11 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cashier.html'));
 });
 
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Listening on http://localhost:${PORT}`);
+});
+
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -46,3 +51,4 @@ mongoose.connect(process.env.MONGODB_URI, {
 });
 })
 .catch(err => console.error('MongoDB error:', err));
+

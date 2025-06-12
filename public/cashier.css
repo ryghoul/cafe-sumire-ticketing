@@ -103,6 +103,33 @@ button.primary:hover {
   background: var(--accent-gold);
 }
 
+/* ── CUSTOMER ───────────────────────────────────────────────────────────────── */
+
+#customerName {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--charcoal-text);
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+/* Make both fields the same width */
+#total,
+#customerName {
+  width: 14rem;
+  padding: 0.5rem;
+  box-sizing: border-box;
+}
+
+/* give a little spacing between them */
+#total {
+  margin-right: 1rem;
+}
+
+
+
+
 /* ── MODAL ───────────────────────────────────────────────────────────────── */
 .modal {
   position: fixed;
