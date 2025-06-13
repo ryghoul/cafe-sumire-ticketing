@@ -7,6 +7,12 @@ const orderSchema = new mongoose.Schema({
     required: true,        // or false if you want it optional
     trim: true
   },
+  payment: {
+    type: String,
+    enum: ['venmo', 'cash', 'zelle'],
+    required: true,
+    default: 'cash'
+  },
   items: [{
     name:  { type: String, required: true },
     milk:  { type: String },

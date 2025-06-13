@@ -144,18 +144,22 @@ document.addEventListener('DOMContentLoaded', () => {
     card.id    = order._id;
     card.className = `order-card ${order.status}`;
 
-    if (order.name) {
-      const h3 = document.createElement('h3');
-      h3.className   = 'customer-name';
-      h3.textContent = order.name;
-      card.append(h3);
-    }
+if (order.name) {
+  const nameEl = document.createElement('h3');
+  nameEl.className = 'customer-name';
+  // show e.g. “Alice (venmo)” if payment is set
+  nameEl.textContent = order.payment
+    ? `${order.name} (${order.payment})`
+    : order.name;
+  card.appendChild(nameEl);
+}
+
 
     const trashBtn = document.createElement('button');
     trashBtn.className   = 'trash';
     trashBtn.textContent = '🗑️';
     trashBtn.addEventListener('click', () => {
-      console.log('Trash clicked for', order._id);
+      console.log('🗑️ Trash clicked for', order._id);
       pendingVoid = order;
       reasonInput.value = '';
       reasonModal.classList.remove('hidden');
@@ -200,66 +204,130 @@ document.addEventListener('DOMContentLoaded', () => {
   // -----------------------------------------------------------------------------
   // 5) SUMMARY & DOWNLOAD
   // -----------------------------------------------------------------------------
-  saveBtn.addEventListener('click', async () => {
-    console.log('Save summary clicked');
-    const res    = await fetch('/api/orders');
-    if (!res.ok) return alert('Failed to fetch orders');
-    const orders = await res.json();
+ saveBtn.addEventListener('click', async () => {
+  console.log('Save summary clicked');
+  const res    = await fetch('/api/orders');
+  if (!res.ok) return alert('Failed to fetch orders');
+  const orders = await res.json();
 
-    const agg = {};
-    let total = 0;
-    orders.forEach(o => {
-      total += o.total;
-      o.items.forEach(i => {
-        const key = i.name + (i.milk ? ` (${i.milk})` : '');
-        agg[key] = (agg[key] || 0) + i.qty;
-      });
-    });
-
-    const dateStr = new Date().toLocaleDateString('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric'
-    });
-
-    summaryBox.innerHTML = `
-      <h2>Saved Summary</h2>
-      <p><strong>Date:</strong> ${dateStr}</p>
-      <ul>
-        ${Object.entries(agg)
-          .map(([item, qty]) => `<li>${qty}× ${item}</li>`)
-          .join('')}
-      </ul>
-      <div class="grand-total">Grand Total: $${total.toFixed(2)}</div>
-      <button id="downloadSummary" class="mt-4 px-4 py-2 rounded hover:bg-gray-100">
-        ⬇️ Download Excel
-      </button>
-    `;
-    summaryBox.classList.remove('hidden');
-
-    document.getElementById('downloadSummary').addEventListener('click', async () => {
-      console.log('Download summary clicked');
-      const r2 = await fetch('/api/orders');
-      if (!r2.ok) return alert('Failed to fetch orders');
-      const data = await r2.json();
-      const agg2 = {};
-      data.forEach(o => o.items.forEach(i => {
-        const key = i.name + (i.milk ? ` (${i.milk})` : '');
-        agg2[key] = (agg2[key] || 0) + i.qty;
-      }));
-
-      const rows = [['Item', 'Quantity'], ...Object.entries(agg2)];
-      const ws   = XLSX.utils.aoa_to_sheet(rows);
-      const wb   = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Summary');
-      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      const blob  = new Blob([wbout], { type: 'application/octet-stream' });
-      const url   = URL.createObjectURL(blob);
-      const a     = document.createElement('a');
-      a.href      = url;
-      a.download  = `order_summary_${new Date().toISOString().slice(0,10)}.xlsx`;
-      a.click();
-      URL.revokeObjectURL(url);
+  // 1) Aggregate items
+  const aggItems = {};
+  let grandTotal = 0;
+  orders.forEach(o => {
+    grandTotal += o.total;
+    o.items.forEach(i => {
+      const key = i.name + (i.milk ? ` (${i.milk})` : '');
+      aggItems[key] = (aggItems[key]||0) + i.qty;
     });
   });
+
+  // 2) Aggregate payments
+  const aggPay = {};
+  orders.forEach(o => {
+    const m = o.payment || 'unknown';
+    aggPay[m] = (aggPay[m]||0) + 1;
+  });
+
+  // render the in-page summary
+  const dateStr = new Date().toLocaleDateString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  });
+  summaryBox.innerHTML = `
+    <h2>Saved Summary</h2>
+    <p><strong>Date:</strong> ${dateStr}</p>
+    <ul>
+      ${Object.entries(aggItems)
+        .map(([item, qty]) => `<li>${qty}× ${item}</li>`)
+        .join('')}
+    </ul>
+    <div class="grand-total">Grand Total: $${grandTotal.toFixed(2)}</div>
+
+    <h2 class="mt-4">By Payment</h2>
+    <ul>
+      ${Object.entries(aggPay)
+        .map(([method, count]) => `<li>${method}: ${count} orders</li>`)
+        .join('')}
+    </ul>
+
+    <button id="downloadSummary" class="mt-4 px-4 py-2 rounded hover:bg-gray-100">
+      ⬇️ Download Excel
+    </button>
+  `;
+  summaryBox.classList.remove('hidden');
+
+  // hook up the download button
+  document.getElementById('downloadSummary').addEventListener('click', async () => {
+    console.log('Download summary clicked');
+
+// 1) fetch all orders
+const r2 = await fetch('/api/orders');
+if (!r2.ok) return alert('Failed to fetch orders');
+const data = await r2.json();
+
+// 2) group & aggregate by payment
+const itemsByPay = {};
+const milksByPay = {};
+
+data.forEach(o => {
+  // determine payment bucket
+  const p = o.payment || 'unknown';
+  itemsByPay[p] = itemsByPay[p] || {};
+  milksByPay[p] = milksByPay[p] || {};
+
+  o.items.forEach(i => {
+    // item count
+    const itemKey = i.name + (i.milk ? ` (${i.milk})` : '');
+    itemsByPay[p][itemKey] = (itemsByPay[p][itemKey] || 0) + i.qty;
+
+    // milk count
+    const milkKey = i.milk || 'unspecified';
+    milksByPay[p][milkKey] = (milksByPay[p][milkKey] || 0) + i.qty;
+  });
+});
+
+// 3) build a single AOA with 4 columns per payment
+const rows = [];
+for (const [method, itemAgg] of Object.entries(itemsByPay)) {
+  const milkAgg    = milksByPay[method] || {};
+  const itemEntries = Object.entries(itemAgg);
+  const milkEntries = Object.entries(milkAgg);
+  const maxLen      = Math.max(itemEntries.length, milkEntries.length);
+
+  // header row for this payment
+  rows.push([ method, 'Quantity', 'Milk', 'Quantity' ]);
+
+  // data rows: pair up items & milks
+  for (let i = 0; i < maxLen; i++) {
+    rows.push([
+      itemEntries[i]?.[0] || '',
+      itemEntries[i]?.[1] || '',
+      milkEntries[i]?.[0] || '',
+      milkEntries[i]?.[1] || ''
+    ]);
+  }
+
+  // blank spacer
+  rows.push([]);
+}
+
+// 4) sheet & workbook
+const wb = XLSX.utils.book_new();
+const ws = XLSX.utils.aoa_to_sheet(rows);
+XLSX.utils.book_append_sheet(wb, ws, 'Summary');
+
+// 5) trigger download
+const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+const blob  = new Blob([wbout], { type:'application/octet-stream' });
+const url   = URL.createObjectURL(blob);
+const a     = document.createElement('a');
+a.href      = url;
+a.download  = `order_summary_${new Date().toISOString().slice(0,10)}.xlsx`;
+a.click();
+URL.revokeObjectURL(url);
+
+  });
+});
+
 
   // -----------------------------------------------------------------------------
   // 6) VOID/TRASH CONTROLS: bulk clear
