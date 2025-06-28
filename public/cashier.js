@@ -32,6 +32,7 @@ const menuItems = [
   { name: 'Banana Matcha',     price: 7.50, category: 'matcha' },
   { name: 'Strawberry Matcha', price: 7.50, category: 'matcha' },
   { name: 'Blueberry Matcha',  price: 7.50, category: 'matcha' },
+  { name: 'Ube Matcha',        price: 7.50, category: 'matcha' },
   { name: 'Hojicha Latte',        price: 7.00, category: 'hojicha' },
   { name: 'Banana Hojicha Latte', price: 7.50, category: 'hojicha' },
   { name: 'Sweet Corn Milk Tea',      price: 5.50, category: 'signature' },
